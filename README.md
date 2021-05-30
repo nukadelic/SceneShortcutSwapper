@@ -9,5 +9,5 @@ Open this window in `Tools \ Scene Swapper`
 Edit the `manifest.json` file located in the `Packages` folder of your unity project and
 add the follwing line to the list of `dependencies`:
 ```json
-"com.nukadelic.unityquickdraw": "https://github.com/nukadelic/SceneShortcutSwapper.git"
+"com.nukadelic.sceneshortcutswapper": "https://github.com/nukadelic/SceneShortcutSwapper.git"
 ```
