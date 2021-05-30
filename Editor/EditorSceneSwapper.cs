@@ -95,8 +95,10 @@ namespace UnityEditor
 
             if (settings.m_Items != null && settings.m_Items.Count > 0)
             {
-                using (new GUILayout.ScrollViewScope(scroll))
+                using (var scope = new GUILayout.ScrollViewScope(scroll))
                 {
+                    scroll = scope.scrollPosition;
+
                     int index = 0; int remove = -1;
 
                     foreach (var item in settings.m_Items)
@@ -149,7 +151,7 @@ namespace UnityEditor
                     }
                 }
             }
-            else 
+            else
             {
                 EditorGUILayout.HelpBox("No items, Press [ + ] to create", MessageType.Info);
 
