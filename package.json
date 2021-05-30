@@ -1,0 +1,13 @@
+{
+    "name": "com.nukadelic.sceneshortcutswapper",
+    "displayName": "Scene Shortcut Swapper",
+    "description" : "Swap scenes using keyboard shortcuts",
+    "version": "0.1",
+    "license": "MIT",
+    "unity": "2018.3",
+    "dependencies": {},
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/nukadelic/SceneShortcutSwapper.git"
+    }
+}
