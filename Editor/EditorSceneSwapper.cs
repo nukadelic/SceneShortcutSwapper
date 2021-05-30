@@ -43,7 +43,12 @@ namespace UnityEditor
 
             var key_index = code == 48 ? 0 : code - 49;
             var settings = EditorSceneSwapperSettings.instance;
-            if (key_index > settings.m_Items.Count - 1) return;
+            
+            if (settings.m_Items == null || key_index > settings.m_Items.Count - 1 ) 
+            { 
+                ShowWindow(); 
+                return; 
+            }
 
             EditorSceneManager.OpenScene(settings.m_Items[key_index].GetPath());
         }
