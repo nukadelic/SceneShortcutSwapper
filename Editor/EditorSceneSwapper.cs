@@ -1,5 +1,3 @@
-#if UNITY_EDITOR
-
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
@@ -202,5 +200,3 @@ namespace UnityEditor
         public void Save() => Save(true);
     }
 }
-
-#endif
