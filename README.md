@@ -1,5 +1,5 @@
 ## Unity Scene Shortcut Swapper
-Quickly open unity scenes using a keyboard shortcut
+Quickly open unity scenes using a keyboard shortcut  
 Open this window in Tools \ Scene Swapper 
 
 ![](https://i.imgur.com/4qDcRFQ.png)
