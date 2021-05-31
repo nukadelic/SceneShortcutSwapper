@@ -2,7 +2,7 @@
     "name": "com.nukadelic.sceneshortcutswapper",
     "displayName": "Scene Shortcut Swapper",
     "description" : "Swap scenes using keyboard shortcuts",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "license": "MIT",
     "unity": "2018.3",
     "dependencies": {},
