@@ -2,14 +2,22 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using UnityEditor.SceneManagement;
+using System.Linq;
+using System.IO;
 
 namespace UnityEditor
 {
     public class EditorSceneSwapper : EditorWindow
     {
+        static System.Reflection.BindingFlags IntFlag( int value ) => ( System.Reflection.BindingFlags ) value;
+
+        #region keyboard event scanner
+
         [InitializeOnLoadMethod]
         static void HookShortcuts()
         {
+            EditorLayoutScan();
+
             AssemblyReloadEvents.beforeAssemblyReload += Unhook;
             HookGlobalEvent(true);
         }
@@ -21,7 +29,7 @@ namespace UnityEditor
         }
         static void HookGlobalEvent(bool add)
         {
-            var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic;
+            var flags = IntFlag( 40 ); // static | nonPublic
             // thanks to : https://github.com/pjc0247/UnityHack
             var info = typeof(EditorApplication).GetField("globalEventHandler", flags);
             var value = (EditorApplication.CallbackFunction)info.GetValue(null);
@@ -83,7 +91,76 @@ namespace UnityEditor
                 EditorSceneManager.OpenScene(settings.m_Items[key_index].GetPath());
             }
 
+            if( settings.m_Items[ key_index ].switchLayout )
+            {
+                EditorLayoutLoad( editorLayoutPaths[ settings.m_Items[key_index].layoutIndex ] );
+            }
+
         }
+
+        #endregion
+
+        // ---------------------------------------------------------------------------------------------------------
+
+
+        #region Editor Layouts 
+
+        static string[] editorLayoutPaths = new string[0];
+        static string[] editorLayoutPopupNames = new string[0];
+        static int[] editorLayoutPopupValues = new int[0];
+
+        static string EditorLayoutName(string path) => Path.GetFileNameWithoutExtension(path);
+
+        // ( string path , bool newProjectLayoutWasCreated, bool setLastLoadedLayoutName, bool keepMainWindow , ? bool logErrorsToConsole ) 
+
+        static System.Reflection.MethodInfo EditorLayoutMethod;
+
+        static void EditorLayoutLoad(string path)
+        {
+            List<object> invokeParams = new List<object> { path, false };
+
+            var c = EditorLayoutMethod.GetParameters().Count();
+
+            for ( var i = 2; i < c; ++i ) invokeParams.Add( false );
+
+            EditorLayoutMethod.Invoke(null, invokeParams.ToArray() );
+        }
+
+        static void EditorLayoutScan()
+        {
+            var WindowLayoutType = typeof(EditorApplication).Assembly.GetType("UnityEditor.WindowLayout");
+            var flags = IntFlag(56); // static | public | nonPublic 
+            var methods = WindowLayoutType.GetMethods(flags);
+            string layoutsModePreferencesPath = (string)WindowLayoutType.GetProperty("layoutsModePreferencesPath", flags).GetValue(null);
+            editorLayoutPaths = Directory.GetFiles(layoutsModePreferencesPath).Where(path => path.EndsWith(".wlt")).ToArray();
+
+            editorLayoutPopupNames = new string[editorLayoutPaths.Length];
+            editorLayoutPopupValues = new int[editorLayoutPaths.Length];
+
+            for (var i = 0; i < editorLayoutPaths.Length; ++i)
+            {
+                var path = editorLayoutPaths[i];
+                editorLayoutPopupNames[i] = Path.GetFileNameWithoutExtension(path);
+                editorLayoutPopupValues[i] = i;
+            }
+
+            foreach (var method in methods)
+            {
+                if (method.Name.ToLower().IndexOf("loadwindowlayout") > -1)
+                {
+                    if (method.GetParameters().Length > 3)
+                    {
+                        EditorLayoutMethod = method;
+                    }
+                    // else Debug.Log( string.Join( ',' , method.GetParameters().Select(x => x.ParameterType + " " + x.Name ) ) );
+                }
+                //else Debug.Log( method.Name );
+            }
+        }
+
+        #endregion
+
+        // ---------------------------------------------------------------------------------------------------------
 
         static string Title = "Tools / Scene Swapper";
 
@@ -136,6 +213,17 @@ namespace UnityEditor
 
                 dirty = true;
             }
+
+            var useLayouts = EditorGUILayout.ToggleLeft(" Use custom editor layouts per item", settings.useLayouts );
+            if( useLayouts != settings.useLayouts )
+            {
+                settings.useLayouts = useLayouts;
+                
+                settings.hintDismiss = false;
+
+                dirty = true;
+            }
+
             GUILayout.Space(10);
 
             if ( ! settings.hintDismiss )
@@ -207,6 +295,25 @@ namespace UnityEditor
                             GUILayout.Space(10);
                         }
 
+                        bool showSubItems = settings.useLayouts;
+
+                        if( showSubItems ) GUILayout.Space( 5 );
+
+                        using( new GUILayout.HorizontalScope() )
+                        {
+                            GUILayout.FlexibleSpace();
+
+                            if( settings.useLayouts )
+                            {
+                                item.switchLayout = EditorGUILayout.ToggleLeft("Layout", item.switchLayout, GUILayout.Width( 75 ) );
+                                item.layoutIndex = EditorGUILayout.IntPopup( item.layoutIndex, editorLayoutPopupNames, editorLayoutPopupValues );
+                            }
+
+                            GUILayout.Space( 5 );
+                        }
+                        
+                        if( showSubItems ) GUILayout.Space( 15 );
+
                         ++index;
 
                         if (EditorGUI.EndChangeCheck()) dirty = true;
@@ -226,7 +333,7 @@ namespace UnityEditor
 
                 GUILayout.FlexibleSpace();
             }
-            if( settings.m_Items != null && settings.m_Items.Count > 9 )
+            if( settings.m_Items != null && settings.m_Items.Count > 8   )
             {
                 GUILayout.FlexibleSpace();
                 GUILayout.Label("Can't add more items.");
@@ -271,6 +378,9 @@ namespace UnityEditor
             public GameObject objectAssetReference;
             public string prefabPath;
 
+            public bool switchLayout;
+            public int layoutIndex;
+
             public string GetPath()
             {
                 if ( itemType == ItemType.BuildIndex ) return SceneUtility.GetScenePathByBuildIndex( buildIndex );
@@ -283,6 +393,7 @@ namespace UnityEditor
 
         public bool autoSave = false;
         public bool hintDismiss = false;
+        public bool useLayouts = false;
 
         [SerializeField]
         public List<Item> m_Items;
